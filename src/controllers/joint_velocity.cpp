@@ -62,7 +62,7 @@ franka::Torques JointVelocity::step(const franka::RobotState &robot_state,
   vel_error_cum = vel_error_cum.cwiseMax(vel_error_cum_min_).cwiseMin(vel_error_cum_max_);
   // PD control
   //tau_d << K_p.asDiagonal() * (q_d - q) + K_d.asDiagonal() * (dq_d - dq);
-  tau_d << K_d.asDiagonal() * vel_error + K_i_.asDiagonal() * vel_error_cum;
+  tau_d << K_p.asDiagonal() * vel_error + K_i_.asDiagonal() * vel_error_cum - K_d.asDiagonal() * dq_filtered;
   franka::Torques torques = VectorToArray(tau_d);
   torques.motion_finished = motion_finished_;
   return torques;
