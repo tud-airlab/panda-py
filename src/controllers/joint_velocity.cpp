@@ -47,13 +47,17 @@ franka::Torques JointVelocity::step(const franka::RobotState &robot_state,
   dq = Eigen::Map<const Vector7d>(robot_state.dq.data());
   // These quantities may be modified outside of the control loop
   mux_.lock();
-  _updateFilter();
+  _updateFilter(); // Filter desired reference
+
+  // Filter velocity readings
+  dq_filtered = ema_filter(dq_filtered, dq, filter_coeff_, true);
+
   K_p = K_p_;
   K_d = K_d_;
   q_d = q_d_;
   dq_d = dq_d_;
   mux_.unlock();
-  vel_error = (dq_d - dq);
+  vel_error = (dq_d - dq_filtered);
   vel_error_cum += vel_error;
   vel_error_cum = vel_error_cum.cwiseMax(vel_error_cum_min_).cwiseMin(vel_error_cum_max_);
   // PD control
@@ -112,6 +116,7 @@ void JointVelocity::start(const franka::RobotState &robot_state,
   q_d_ = Eigen::Map<const Vector7d>(robot_state.q.data());
   q_d_target_ = Eigen::Map<const Vector7d>(robot_state.q.data());
   dq_d_.setZero();
+  dq_filtered.setZero();
   dq_d_target_.setZero();
 }
 
